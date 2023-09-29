@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# "shellcheck -ax" pass
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+dist="/mnt/d/tmp/_hevc_bench/hevc_3500_fast/XDCAMHD50_startt_Ateme_hevc_3500_fast.mp4"
+ref="/mnt/d/tmp/_hevc_bench/sources/XDCAMHD50_startt.mxf"
+
+sync_probe_duration_sec=2
+shift_ref=5
+shift_main_best=0
+shift_main_psnr=0
+
+for (( shift_main=2; shift_main<8; shift_main++ ))
+do
+    psnr=$(ffmpeg -y -hide_banner -i "$dist" -i "$ref" -shortest -map v -lavfi \
+        "[0:v]trim=start_frame=${shift_main}:duration=${sync_probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[main];
+         [1:v]trim=start_frame=${shift_ref}:duration=${sync_probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[ref];
+         [main][ref]psnr" -f null - 2>&1|grep psnr|awk -v "RS=:" '/average/{getline; print $1}')
+
+    psnr_int=$(jq -n '1000*'"$psnr"'|floor')
+    if [[ ${psnr_int} -gt ${shift_main_psnr} ]]
+    then
+        shift_main_best=${shift_main}
+        shift_main_psnr=${psnr_int}
+    fi
+done
+
+echo "Main/Ref shift=$((shift_main_best-shift_ref))"
