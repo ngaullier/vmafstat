@@ -5,27 +5,60 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-dist="/mnt/d/tmp/_hevc_bench/hevc_3500_fast/XDCAMHD50_startt_Ateme_hevc_3500_fast.mp4"
-ref="/mnt/d/tmp/_hevc_bench/sources/XDCAMHD50_startt.mxf"
+_scriptdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-sync_probe_duration_sec=2
-shift_ref=5
+VERSION="1.0.0.0"
+
+#dist="/mnt/d/tmp/_hevc_bench/hevc_3500_fast/XDCAMHD50_startt_Ateme_hevc_3500_fast.mp4"
+#ref="/mnt/d/tmp/_hevc_bench/sources/XDCAMHD50_startt.mxf"
+
+# pushd required for shellcheck workaround
+pushd "$_scriptdir" >/dev/null
+. ./ffsync_cmd.sh
+popd >/dev/null
+
+# parse args
+get_opts "$@"
+if [[ -z $file_ref || -z $file_main ]]; then
+    usage
+fi
+
+
+# ---------------------------------------------------------
+# Main loop
+# ____________________________________
 shift_main_best=0
-shift_main_psnr=0
-
-for (( shift_main=2; shift_main<8; shift_main++ ))
+psnr_best=0
+psnr_min=999999999
+shift_ref=${probe_position_frames}
+for (( shift_main=shift_ref-probe_range_frames; shift_main<=shift_ref+probe_range_frames; shift_main++ ))
 do
-    psnr=$(ffmpeg -y -hide_banner -i "$dist" -i "$ref" -shortest -map v -lavfi \
-        "[0:v]trim=start_frame=${shift_main}:duration=${sync_probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[main];
-         [1:v]trim=start_frame=${shift_ref}:duration=${sync_probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[ref];
+    shift_main_float=$(jq -n "${shift_main}/50")
+    shift_ref_float=$(jq -n "${shift_ref}/50")
+    psnr=$(ffmpeg -y -hide_banner -i "${file_main}" -i "${file_ref}" -shortest -map v -lavfi \
+        "[0:v]trim=start=${shift_main_float}:duration=${probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[main];
+         [1:v]trim=start=${shift_ref_float}:duration=${probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[ref];
          [main][ref]psnr" -f null - 2>&1|grep psnr|awk -v "RS=:" '/average/{getline; print $1}')
 
+    [[ ${verbose} -gt 1 ]] && echo "Frame $((shift_main-shift_ref)): $psnr"
     psnr_int=$(jq -n '1000*'"$psnr"'|floor')
-    if [[ ${psnr_int} -gt ${shift_main_psnr} ]]
+    if [[ ${psnr_int} -gt ${psnr_best} ]]
     then
         shift_main_best=${shift_main}
-        shift_main_psnr=${psnr_int}
+        psnr_best=${psnr_int}
     fi
+    [[ ${psnr_int} -lt ${psnr_min} ]] && psnr_min=${psnr_int}
 done
 
-echo "Main/Ref shift=$((shift_main_best-shift_ref))"
+# ---------------------------------------------------------
+# Report
+# ____________________________________
+ret=$((shift_main_best-shift_ref))
+psnr_diff=$((psnr_best - psnr_min))
+[[ ${verbose} -gt 0 ]] && echo "Main/Ref shift=$ret with psnr diff=$(jq -n "$psnr_diff"'/1000')" || echo $ret
+
+if [[ ${psnr_diff} -lt ${probe_min_psnr_diff_x1000} ]]
+then
+    echo "Not enough psnr variance to assume successfull sync (${psnr_diff} < ${probe_min_psnr_diff_x1000})" 1>&2
+    exit 1
+fi
