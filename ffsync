@@ -39,12 +39,12 @@ fps_main=$(jq -r '.streams[] | select(.codec_type == "video" ).avg_frame_rate' "
 # ---------------------------------------------------------
 # Main loop
 # ____________________________________
-probe_range_frames=$(jq -n "${probe_range_sec}*(${fps_main})|round")
 seek_counter=3
 while true; do
     shift_ref_base=$(jq -n "${probe_position_sec}*(${fps_ref})|round")
     shift_main_base=$(jq -n "${probe_position_sec}*(${fps_main})|round")
-    [[ $shift_main_base -lt $probe_range_frames ]] && shift_main_base=$probe_range_frames
+    shift_max_after=$(jq -n "${probe_range_sec}*(${fps_main})|round")
+    [[ $shift_main_base -lt $shift_max_after ]] && shift_max_before=$shift_main_base || shift_max_before=$shift_max_after
     shift_ref_best=0
     shift_main_best=0
     psnr_diff_best=0
@@ -55,7 +55,7 @@ while true; do
         this_shift_main_best=0
         psnr_best=0
         psnr_min=999999999
-        for (( shift_main=shift_main_base-probe_range_frames; shift_main<=shift_main_base+probe_range_frames; shift_main++ ))
+        for (( shift_main=shift_main_base-shift_max_before; shift_main<=shift_main_base+shift_max_after; shift_main++ ))
         do
             psnr=$(ffmpeg -y -hide_banner -i "${file_main}" -i "${file_ref}" -shortest -map v -lavfi \
                 "[0:v]trim=start_frame=${shift_main}:duration=${probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[main];
