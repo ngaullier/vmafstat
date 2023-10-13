@@ -9,7 +9,6 @@ _scriptdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 VERSION="1.0.0.0"
 
-. /srv/cjitools/sh/helpers.sh
 # pushd required for shellcheck workaround
 pushd "$_scriptdir" >/dev/null
 . ./ffsync_cmd.sh
@@ -34,64 +33,69 @@ ffprobe2json    "$file_ref"     "$json_ref"
 ffprobe2json    "$file_main"    "$json_main"
  fps_ref=$(jq -r '.streams[] | select(.codec_type == "video" ).avg_frame_rate' "$json_ref")
 fps_main=$(jq -r '.streams[] | select(.codec_type == "video" ).avg_frame_rate' "$json_main")
-[[ ${verbose} -gt 2 ]] && log "fps_ref=$fps_ref, fps_main=$fps_main"
+log 2 "fps_ref=$fps_ref, fps_main=$fps_main"
 
 # ---------------------------------------------------------
 # Main loop
 # ____________________________________
 seek_counter=3
 while true; do
-    shift_ref_base=$(jq -n "${probe_position_sec}*(${fps_ref})|round")
-    shift_main_base=$(jq -n "${probe_position_sec}*(${fps_main})|round")
-    shift_max_after=$(jq -n "${probe_range_sec}*(${fps_main})|round")
+    shift_ref_base=$(jq -n "${trim_ref_base_s}*(${fps_ref})|round")
+    shift_main_base=$(jq -n "${trim_main_base_s}*(${fps_main})|round")
+    shift_max_after=$(jq -n "${max_delta_s}*(${fps_main})|round")
     [[ $shift_main_base -lt $shift_max_after ]] && shift_max_before=$shift_main_base || shift_max_before=$shift_max_after
     shift_ref_best=0
     shift_main_best=0
     psnr_diff_best=0
+    psnr_best=0
     for (( shift_ref=shift_ref_base; shift_ref<=shift_ref_base+(shift_ref_base>shift_main_base); shift_ref++ ))
     do
-        [[ ${verbose} -gt 1 ]] && log "trim_ref=$shift_ref"
+        log 1 "trim_ref=$shift_ref"
         this_shift_ref_best=0
         this_shift_main_best=0
-        psnr_best=0
-        psnr_min=999999999
+        this_psnr_best=0
+        this_psnr_min=999999999
         for (( shift_main=shift_main_base-shift_max_before; shift_main<=shift_main_base+shift_max_after; shift_main++ ))
         do
             psnr=$(ffmpeg -y -hide_banner -i "${file_main}" -i "${file_ref}" -shortest -map v -lavfi \
-                "[0:v]trim=start_frame=${shift_main}:duration=${probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[main];
-                 [1:v]trim=start_frame=${shift_ref}:duration=${probe_duration_sec}, settb=AVTB, setpts=PTS-STARTPTS[ref];
+                "[0:v]trim=start_frame=${shift_main}:duration=${seg_duration_s}, settb=AVTB, setpts=PTS-STARTPTS[main];
+                 [1:v]trim=start_frame=${shift_ref}:duration=${seg_duration_s}, settb=AVTB, setpts=PTS-STARTPTS[ref];
                  [main][ref]psnr" -f null - 2>&1|grep psnr|awk -v "RS=:" '/average/{getline; print $1}')
 
-            [[ ${verbose} -gt 1 ]] && log "$((shift_main-shift_main_base)): $psnr"
+            log 1 "$((shift_main-shift_main_base)): $psnr"
             psnr_int=$(jq -n '1000*'"$psnr"'|floor')
-            if [[ ${psnr_int} -gt ${psnr_best} ]]
+            if [[ ${psnr_int} -gt ${this_psnr_best} ]]
             then
                 this_shift_ref_best=${shift_ref}
                 this_shift_main_best=${shift_main}
-                psnr_best=${psnr_int}
+                this_psnr_best=${psnr_int}
             fi
-            [[ ${psnr_int} -lt ${psnr_min} ]] && psnr_min=${psnr_int}
+            [[ ${psnr_int} -lt ${this_psnr_min} ]] && this_psnr_min=${psnr_int}
         done
-        psnr_diff=$((psnr_best - psnr_min))
-        if [[ ${psnr_diff} -gt ${psnr_diff_best} ]]
+        this_psnr_diff=$((this_psnr_best - this_psnr_min))
+        if [[ ${this_psnr_diff} -gt ${psnr_diff_best} ]]
         then
             shift_ref_best=${this_shift_ref_best}
             shift_main_best=${this_shift_main_best}
-            psnr_diff_best=${psnr_diff}
+            psnr_best=${this_psnr_best}
+            psnr_diff_best=${this_psnr_diff}
         fi
     done
-    [[ ${psnr_diff_best} -ge ${probe_min_psnr_diff_x1000} ]] && break
-    log "Seek to ${probe_position_sec} failed. Not enough psnr variance to assume successfull sync (${psnr_diff_best} < ${probe_min_psnr_diff_x1000})"
+    [[ ${psnr_diff_best} -ge ${min_psnr_diff} ]] && break
+    log 0 "Seek to ${trim_ref_base_s}/${trim_main_base_s} failed: not enough psnr variance to assume successfull sync (${psnr_diff_best} < ${min_psnr_diff})"
     [[ $seek_counter -le 1 ]] && exit_fail "Did not find a seek point with enough psnr variance"
     seek_counter=$((seek_counter-1))
-    probe_position_sec=$(jq -n "${probe_position_sec}+3")
+    trim_ref_base_s=$(jq -n "${trim_ref_base_s}+${trim_retry_shift_s}")
+    trim_main_base_s=$(jq -n "${trim_main_base_s}+${trim_retry_shift_s}")
 done
 
 # ---------------------------------------------------------
 # Report
 # ____________________________________
-[[ ${verbose} -gt 0 ]] && log "Main/Ref shift=$(jq -n "${shift_main_best}-${shift_ref_best}/(${fps_ref})*(${fps_main})|round") with psnr diff=$(jq -n "$psnr_diff"'/1000')"
+log 0 "Main/Ref offset=$(jq -n "${shift_main_best}-${shift_ref_best}/(${fps_ref})*(${fps_main})|round") with psnr diff=$(jq -n "$psnr_diff_best"'/1000')"
 
 
 echo "$shift_ref_best"
 echo "$shift_main_best"
+echo "$psnr_diff_best"
+echo "$psnr_best"

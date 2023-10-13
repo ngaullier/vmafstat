@@ -1,10 +1,10 @@
 log ()
 {
-    echo "$1" >&2
+    [[ ${verbose} -gt $1 ]] && echo "$2" >&2
 }
 
 exit_fail ()
 {
-    log "Fail: $1"
+    log -1 "Fail: $1"
     exit 1
 }
