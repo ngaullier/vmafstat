@@ -32,12 +32,12 @@ usage()
     echo 1>&2
     echo "Example:" 1>&2
     echo "  readarray sync_info <<< \\" 1>&2
-    echo "    \$(ffsync -i /mnt/encoded.mp4 -r /mnt/source.mxf -V -s 5.00 -d 0.8 -l 7000)" 1>&2
-    echo "  trim_main=\${sync_info[0]}" 1>&2
-    echo "  trim_ref=\${sync_info[1]}" 1>&2
+    echo "    \$(ffsync -i encoded.mp4 -r source.mxf -q -s 5.00 -o 0.2 -d 0.8 -l 700)" 1>&2
+    echo "  start_main=\${sync_info[0]}" 1>&2
+    echo "  start_ref=\${sync_info[1]}" 1>&2
     echo "  ffmpeg -i encoded.mp4 -i source.mxf -lavfi \\" 1>&2
-    echo "    \"[0:v]trim=start_frame=\${trim_main},settb=AVTB,setpts=PTS-STARTPTS[main];" 1>&2
-    echo "     [1:v]trim=start_frame=\${trim_ref}:,settb=AVTB,setpts=PTS-STARTPTS[ref];" 1>&2
+    echo "    \"[0:v]trim=start_frame=\${start_main},settb=AVTB,setpts=PTS-STARTPTS[main];" 1>&2
+    echo "     [1:v]trim=start_frame=\${start_ref},settb=AVTB,setpts=PTS-STARTPTS[ref];" 1>&2
     echo "     [main][ref]psnr\" ..." 1>&2
     exit 1
 }
