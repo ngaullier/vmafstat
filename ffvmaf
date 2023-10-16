@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# "shellcheck -ax" pass
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+_scriptdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+VERSION="1.0.0.0"
+
+# pushd required for shellcheck workaround
+pushd "$_scriptdir" >/dev/null
+. ./ffvmaf_cmd.sh
+. ./ffvmaf_log.sh
+popd >/dev/null
+
+# parse args
+get_opts "$@"
+if [[ -z $file_ref || -z $file_main || -z $file_out ]]; then
+    usage
+fi
+
+if [[ -z $duration ]]; then
+    duration_opt_flat=
+else
+    duration_opt_flat="-t $duration"
+fi
+
+if [[ -z $ffsync_opt ]]; then
+    ffsync_opt_flat=
+else
+    IFS=':' read -r -a ffsync_opt_pairs <<< "$ffsync_opt"
+    unset IFS
+    ffsync_opt_flat=$(for optpair in "${ffsync_opt_pairs[@]}"; do \
+        [[ "$optpair" == *=* ]] && echo "--${optpair%=*} ${optpair#*=}" || echo "--$optpair"; \
+        done;)
+fi
+
+# global settings
+INI__ffmpeg_binary='ffmpeg'
+INI__ff_global=( '-hide_banner' '-probesize' '10000000' )
+
+# check deps
+! which "$INI__ffmpeg_binary" >/dev/null && exit_fail "ffmpeg: '$INI__ffmpeg_binary' not found"
+"$INI__ffmpeg_binary" -filters 2>/dev/null|grep 'libvmaf' >/dev/null 2>/dev/null || exit_fail "ffmpeg: missing vmaf support"
+
+# ffsync
+# shellcheck disable=SC2206
+cmd_sync=("$_scriptdir/ffsync" '-i' "${file_main}" '-r' "${file_ref}" $ffsync_opt_flat)
+log 2 "  $(printf "%q " "${cmd_sync[@]}")"
+# catch cmd_sync exit code before parsing
+cmd_sync_output=$( "${cmd_sync[@]}" )
+readarray -t sync_info <<< "$cmd_sync_output"
+start_main=${sync_info[0]}
+start_ref=${sync_info[1]}
+
+# vmaf
+# shellcheck disable=SC2206
+cmd_analysis=("$INI__ffmpeg_binary" "${INI__ff_global[@]}" '-y' '-nostdin'\
+    '-i' "${file_main}" '-i' "${file_ref}" '-shortest' '-map' 'v' '-lavfi' \
+    "[0:v]trim=start_frame=${start_main},settb=AVTB,setpts=PTS-STARTPTS[main];
+     [1:v]trim=start_frame=${start_ref},settb=AVTB,setpts=PTS-STARTPTS[ref];
+     [main][ref]libvmaf=model=version=vmaf_v0.6.1neg:n_threads=4:log_fmt=json:log_path=${file_out}"
+     '-f' 'null' $duration_opt_flat '-')
+log 2 "  $(printf "%q " "${cmd_analysis[@]}")"
+"${cmd_analysis[@]}"
