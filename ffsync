@@ -67,7 +67,7 @@ while true; do
         this_psnr_min=999999999
         for (( shift_main=start_main_base-max_neg_offset; shift_main<=start_main_base+max_offset; shift_main++ ))
         do
-            cmd_analysis=("$INI__ffmpeg_binary" "${INI__ff_global[@]}" '-y' \
+            cmd_analysis=("$INI__ffmpeg_binary" "${INI__ff_global[@]}" '-y' '-nostdin' \
                 '-i' "${file_main}" '-i' "${file_ref}" '-shortest' '-map' 'v' '-lavfi' \
                 "[0:v]trim=start_frame=${shift_main}:duration=${seg_duration_s},settb=AVTB,setpts=PTS-STARTPTS[main];
                  [1:v]trim=start_frame=${shift_ref}:duration=${seg_duration_s},settb=AVTB,setpts=PTS-STARTPTS[ref];

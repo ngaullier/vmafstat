@@ -32,7 +32,7 @@ usage()
     echo "     --retry_shift after sync failed: shift (seconds) to apply to start times before trying again. Defaults ${retry_start_shift_s}." 1>&2
     echo 1>&2
     echo "Example:" 1>&2
-    echo "  readarray sync_info <<< \\" 1>&2
+    echo "  readarray -t sync_info <<< \\" 1>&2
     echo "    \$(ffsync -i encoded.mp4 -r source.mxf -q -s 5.00 -o 0.2 -d 0.8 -l 700)" 1>&2
     echo "  start_main=\${sync_info[0]}" 1>&2
     echo "  start_ref=\${sync_info[1]}" 1>&2
