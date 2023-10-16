@@ -21,14 +21,14 @@ usage()
     echo "  -h              display this help text." 1>&2
     echo "  -v              display version." 1>&2
     echo "  -q, --quiet     only display raw parsable values on stdout and errors on stderr." 1>&2
-    echo "  -V, --verbose   increase verbosity level." 1>&2
+    echo "  -V, --verbose   increase verbosity level (-V -V means debug and is the max verbose level)." 1>&2
     echo "  -r --ref        reference input file." 1>&2
     echo "  -i --main       processed input file." 1>&2
     echo "  -s --start-ref  position (seconds) in the reference file. Defaults ${trim_ref_base_s}." 1>&2
     echo "     --start-main position (seconds) in the main file. Defaults=same start as reference file." 1>&2
     echo "  -o --max-offset max advance/delay (seconds). Defaults ${max_delta_s}." 1>&2
     echo "  -d --duration   duration (seconds) of the segment for psnr computation. Defaults ${seg_duration_s}." 1>&2
-    echo "  -l --level      integer value, minimum of (max psnr - min psnr) * 1000 to assume successfull sync. Defaults ${min_psnr_diff}." 1>&2
+    echo "  -l --level      integer value, minimum of (max psnr - min psnr) * 100 to assume successfull sync. Defaults ${min_psnr_diff}." 1>&2
     echo 1>&2
     echo "Example:" 1>&2
     echo "  readarray sync_info <<< \\" 1>&2
@@ -69,7 +69,7 @@ get_opts()
     trim_retry_shift_s=3
     max_delta_s=0.12
     seg_duration_s=1
-    min_psnr_diff=8000
+    min_psnr_diff=800
     while [[ $# -gt 0 ]]
     do
         local key="$1"

@@ -63,7 +63,7 @@ while true; do
                  [main][ref]psnr" -f null - 2>&1|grep psnr|awk -v "RS=:" '/average/{getline; print $1}')
 
             log 1 "$((shift_main-shift_main_base)): $psnr"
-            psnr_int=$(jq -n '1000*'"$psnr"'|floor')
+            psnr_int=$(jq -n '100*'"$psnr"'|floor')
             if [[ ${psnr_int} -gt ${this_psnr_best} ]]
             then
                 this_shift_ref_best=${shift_ref}
@@ -92,8 +92,7 @@ done
 # ---------------------------------------------------------
 # Report
 # ____________________________________
-log 0 "Main/Ref offset=$(jq -n "${shift_main_best}-${shift_ref_best}/(${fps_ref})*(${fps_main})|round") with psnr diff=$(jq -n "$psnr_diff_best"'/1000')"
-
+log 0 "Synced: offset=$(jq -n "${shift_main_best}-${shift_ref_best}/(${fps_ref})*(${fps_main})|round"), psnr_diff=$(jq -n "$psnr_diff_best"'/100'), psnr_max=$(jq -n "$psnr_best"'/100')"
 
 echo "$shift_ref_best"
 echo "$shift_main_best"
