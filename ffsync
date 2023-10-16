@@ -27,6 +27,11 @@ INI__ffmpeg_binary='ffmpeg'
 INI__ffprobe_binary='ffprobe'
 INI__ff_global=( '-hide_banner' '-probesize' '10000000' )
 
+# check deps
+! which jq >/dev/null && echo "Please install jq" && exit 1
+! which "$INI__ffprobe_binary" >/dev/null && echo "ffprobe: '$INI__ffprobe_binary' not found" && exit 1
+! which "$INI__ffmpeg_binary" >/dev/null && echo "ffmpeg: '$INI__ffmpeg_binary' not found" && exit 1
+
 # make temp dir
 tmp_dir="$(mktemp_auto)"
 mktemp_trap "$tmp_dir"
@@ -45,22 +50,22 @@ log 2 "fps_ref=$fps_ref, fps_main=$fps_main"
 # ____________________________________
 seek_counter=3
 while true; do
-    shift_ref_base=$(jq -n "${trim_ref_base_s}*(${fps_ref})|round")
-    shift_main_base=$(jq -n "${trim_main_base_s}*(${fps_main})|round")
-    shift_max_after=$(jq -n "${max_delta_s}*(${fps_main})|round")
-    [[ $shift_main_base -lt $shift_max_after ]] && shift_max_before=$shift_main_base || shift_max_before=$shift_max_after
+    start_ref_base=$(jq -n "${start_ref_base_s}*(${fps_ref})|round")
+    start_main_base=$(jq -n "${start_main_base_s}*(${fps_main})|round")
+    max_offset=$(jq -n "${max_offset_s}*(${fps_main})|round")
+    [[ $start_main_base -lt $max_offset ]] && max_neg_offset=$start_main_base || max_neg_offset=$max_offset
     shift_ref_best=0
     shift_main_best=0
     psnr_diff_best=0
     psnr_best=0
-    for (( shift_ref=shift_ref_base; shift_ref<=shift_ref_base+(shift_ref_base>shift_main_base); shift_ref++ ))
+    for (( shift_ref=start_ref_base; shift_ref<=start_ref_base+(start_ref_base>start_main_base); shift_ref++ ))
     do
-        log 1 "trim_ref=$shift_ref"
+        log 1 "Seek ref @${shift_ref} frames"
         this_shift_ref_best=0
         this_shift_main_best=0
         this_psnr_best=0
         this_psnr_min=999999999
-        for (( shift_main=shift_main_base-shift_max_before; shift_main<=shift_main_base+shift_max_after; shift_main++ ))
+        for (( shift_main=start_main_base-max_neg_offset; shift_main<=start_main_base+max_offset; shift_main++ ))
         do
             cmd_analysis=("$INI__ffmpeg_binary" "${INI__ff_global[@]}" '-y' \
                 '-i' "${file_main}" '-i' "${file_ref}" '-shortest' '-map' 'v' '-lavfi' \
@@ -70,7 +75,7 @@ while true; do
                  '-f' 'null' '-')
             log 2 "  $(printf "%q " "${cmd_analysis[@]}")"
             psnr=$("${cmd_analysis[@]}" 2>&1|grep psnr|awk -v 'RS=:' '/average/{getline; print $1}')
-            log 1 "$((shift_main-shift_main_base)): $psnr"
+            log 1 "$((shift_main-start_main_base)): $psnr"
             psnr_int=$(jq -n '100*'"$psnr"'|floor')
             if [[ ${psnr_int} -gt ${this_psnr_best} ]]
             then
@@ -90,11 +95,11 @@ while true; do
         fi
     done
     [[ ${psnr_diff_best} -ge ${min_psnr_diff} ]] && break
-    log 0 "Seek to ${trim_ref_base_s}/${trim_main_base_s} failed: not enough psnr variance to assume successfull sync (${psnr_diff_best} < ${min_psnr_diff})"
+    log 0 "Sync @${start_ref_base_s}s/${start_main_base_s}s failed: not enough psnr variance to assume successfull sync (${psnr_diff_best} < ${min_psnr_diff})"
     [[ $seek_counter -le 1 ]] && exit_fail "Did not find a seek point with enough psnr variance"
     seek_counter=$((seek_counter-1))
-    trim_ref_base_s=$(jq -n "${trim_ref_base_s}+${trim_retry_shift_s}")
-    trim_main_base_s=$(jq -n "${trim_main_base_s}+${trim_retry_shift_s}")
+    start_ref_base_s=$(jq -n "${start_ref_base_s}+${retry_start_shift_s}")
+    start_main_base_s=$(jq -n "${start_main_base_s}+${retry_start_shift_s}")
 done
 
 # ---------------------------------------------------------
