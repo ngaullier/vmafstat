@@ -28,7 +28,6 @@ frames = json_path(json, "$.frames[*].frameNum")
 vmaf_frame = json_path(json, "$.frames[*].metrics.vmaf")
 vmaf_smooth=runmean(vmaf_frame,runmean_win)
 vmaf_var_rms=sqrt(mean((vmaf_frame-vmaf_smooth)^2))
-vmaf_cambi = json_path(json, "$.frames[*].metrics.cambi_full_reference")
 
 # Annotations / print stats
 print_stats <- list(
@@ -51,12 +50,11 @@ frame_time <- format(frame_time, "%Y-%m-%d %H:%M:%OS5")
 
 # Draw
 library(plotly)
-dataframe <- data.frame( frame_time, vmaf_frame, vmaf_smooth, vmaf_cambi )
+dataframe <- data.frame( frame_time, vmaf_frame, vmaf_smooth )
 fig <- plot_ly(dataframe, x = ~frame_time)
 fig <- fig %>% add_trace(y = ~vmaf_frame,  name = 'vmaf_frame',  mode = 'lines', type='scatter', visible='legendonly')
 fig <- fig %>% add_trace(y = ~vmaf_smooth,  name = 'vmaf',  mode = 'lines', type='scatter')
 #fig <- fig %>% add_trace(y = vmaf_var,  name = 'vmaf_var',  mode = 'lines', type='scatter', visible='legendonly')
-fig <- fig %>% add_trace(y = ~vmaf_cambi, name = 'cambi', mode = 'lines', type='scatter')
 
 fig <- fig %>% layout(title = page_title,
          plot_bgcolor='#e5ecf6',
