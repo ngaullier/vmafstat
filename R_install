@@ -1,0 +1,11 @@
+# libssl required by plotly
+sudo apt-get install r-base libssl-dev
+
+# install R packages
+sudo R --vanilla <<EOF
+install.packages("caTools", repos="https://cran.biotools.fr")
+install.packages("optparse", repos="https://cran.biotools.fr")
+install.packages("plotly", repos="https://cran.biotools.fr")
+install.packages("remotes", repos="https://cran.biotools.fr")
+remotes::install_github("blmoore/rjsonpath")
+EOF
