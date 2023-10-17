@@ -1,8 +1,9 @@
 #!/usr/bin/env -S Rscript --vanilla
 
 library("optparse")
-library("rjsonpath")
 library("caTools")
+library("rjsonpath")
+msg.trap <- capture.output( suppressMessages( library(plotly) ))
 
 # cmdline
 parser <- OptionParser()
@@ -16,16 +17,21 @@ parser <- add_option(parser, c("-s", "--smooth"), type="integer", default=10,
             help="Number of frames to average for smoothing [default %default]",    metavar="number")
 cmd_options <- parse_args(parser)
 
+
 in_path=cmd_options[['input']]
 out_path=cmd_options[['output']]
 page_title=cmd_options[['title']]
 runmean_win=cmd_options[['smooth']]
 
+if (is.null(in_path) || is.null(out_path)) {
+    print_help(parser)
+    q(status=1)
+}
+
 # json read / data processing
 json <- read_json(in_path)
-
-frames = json_path(json, "$.frames[*].frameNum")
-vmaf_frame = json_path(json, "$.frames[*].metrics.vmaf")
+frames = suppressMessages( json_path(json, "$.frames[*].frameNum") )
+vmaf_frame = suppressMessages( json_path(json, "$.frames[*].metrics.vmaf") )
 vmaf_smooth=runmean(vmaf_frame,runmean_win)
 vmaf_var_rms=sqrt(mean((vmaf_frame-vmaf_smooth)^2))
 
@@ -49,7 +55,6 @@ frame_time = as.POSIXct(frames/25, origin='1970-01-01', tz='UTC')
 frame_time <- format(frame_time, "%Y-%m-%d %H:%M:%OS5")
 
 # Draw
-library(plotly)
 dataframe <- data.frame( frame_time, vmaf_frame, vmaf_smooth )
 fig <- plot_ly(dataframe, x = ~frame_time)
 fig <- fig %>% add_trace(y = ~vmaf_frame,  name = 'vmaf_frame',  mode = 'lines', type='scatter', visible='legendonly')
