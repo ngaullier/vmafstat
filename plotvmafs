@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# "shellcheck" pass
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+if [[ $# -lt 3 ]]
+then
+    echo "Usage: plotvmafs <json_folder> <plotvmaf_args>"  1>&2
+    exit 1
+fi
+
+readarray -d '' inputs < <(find "$1" -maxdepth 1 -name "*.json" -printf "-i\0%p\0")
+shift
+./plotvmaf.R "${inputs[@]}" "$@"
