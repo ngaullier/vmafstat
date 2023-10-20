@@ -32,13 +32,6 @@ for (in_path in args$input) {
     vmaf_smooth = runmean(vmaf_frame, runmean_win)
     vmaf_var_rms = sqrt(mean( (vmaf_frame-vmaf_smooth)^2 ))
 
-    # Annotations / print stats
-    print_stats <- list(
-      xref = "paper", yref = "paper", x = 1, showarrow = F, font = list(color = '#111100', family = 'sans serif', size = 16),
-      y = 1,
-      text = sprintf("vmaf\nvariance=%.2f",vmaf_var_rms)
-    )
-
     # Plot init
     if (!exists("fig")) {
         # Convert frame numbers to timestamps
@@ -46,10 +39,7 @@ for (in_path in args$input) {
         options("digits.secs"=2)
         frame_time = as.POSIXct(frames/25, origin='1970-01-01', tz='UTC')
         frame_time <- format(frame_time, "%Y-%m-%d %H:%M:%OS5")
-
-        # Draw
-        dataframe <- data.frame( frame_time )
-        fig <- plot_ly(dataframe, x = ~frame_time)
+        fig <- plot_ly(x = frame_time)
         fig <- fig %>% layout(title = page_title,
             xaxis = list(
                 title = 'Time', type='date', tickformat='%H:%M:%S.%L',
@@ -60,12 +50,12 @@ for (in_path in args$input) {
                 scaleanchor  = FALSE, zerolinecolor = '#ffff', zerolinewidth = 2, gridcolor = 'ffff'
                 ),
             plot_bgcolor='#e5ecf6',
-            showlegend = TRUE,
-            annotations = print_stats
+            showlegend = TRUE
          )
     }
-    fig <- fig %>% add_trace(y = vmaf_frame,  mode = 'lines', type='scatter', name = 'vmaf_frame', visible='legendonly')
-    fig <- fig %>% add_trace(y = vmaf_smooth, mode = 'lines', type='scatter', name = in_path)
+    id <- basename(tools::file_path_sans_ext( in_path ))
+    fig <- fig %>% add_trace(y = vmaf_frame,  mode = 'lines', type='scatter', name = id, visible='legendonly')
+    fig <- fig %>% add_trace(y = vmaf_smooth, mode = 'lines', type='scatter', name = sprintf("%s\nvar=%.2f", id, vmaf_var_rms))
 }
 
 htmlwidgets::saveWidget( fig, out_path, title=page_title, selfcontained=FALSE )
