@@ -9,6 +9,7 @@ msg.trap <- capture.output( suppressMessages( library(plotly) ))
 parser <- ArgumentParser(description='Render vmaf json to dynamic (web) graphs')
 parser$add_argument( '-i', '--input',  action='append', help="json input file",  required=TRUE )
 parser$add_argument( '-o', '--output',                  help="html output file", required=TRUE )
+parser$add_argument( '-d', '--duration', type="integer",help="Number of frames to process [default all]. Also a turnaround when sizes differ [use any value]", default=0 )
 parser$add_argument( '-t', '--title',  type="character",help="graph/html title", default=NULL )
 parser$add_argument( '-s', '--smooth', type="integer",  help="Number of frames to average for smoothing [default %(default)s]", default=10 )
 parser$add_argument( '-f', '--perframe', action="store_true", help="Enable frame-level plot", default=FALSE )
@@ -16,6 +17,7 @@ parser$add_argument( '-f', '--perframe', action="store_true", help="Enable frame
 args <- parser$parse_args()
 
 out_path=args$output
+duration=args$duration
 page_title=args$title
 runmean_win=args$smooth
 perframe=args$perframe
@@ -29,13 +31,17 @@ for (in_path in args$input) {
 
     # Json read / data processing
     json <- read_json(in_path)
-    frames = suppressMessages( json_path(json, "$.frames[*].frameNum") )
     vmaf_frame = suppressMessages( json_path(json, "$.frames[*].metrics.vmaf") )
+    if (duration > 0)
+        vmaf_frame <- vmaf_frame[1:duration]
     vmaf_smooth = runmean(vmaf_frame, runmean_win)
     vmaf_var_rms = sqrt(mean( (vmaf_frame-vmaf_smooth)^2 ))
 
     # Plot init
     if (!exists("fig")) {
+        frames = suppressMessages( json_path(json, "$.frames[*].frameNum") )
+        if (duration > 0)
+            frames <- frames[1:duration]
         # Convert frame numbers to timestamps
         # 5 digits are required (%OS5) for proper 2 digits rounding in xaxis/tickformat below
         options("digits.secs"=2)
