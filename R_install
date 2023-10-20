@@ -2,10 +2,11 @@
 sudo apt-get install r-base libssl-dev
 
 # install R packages
+cran_mirror="https://cran.biotools.fr"
 sudo R --vanilla <<EOF
-install.packages("caTools", repos="https://cran.biotools.fr")
-install.packages("optparse", repos="https://cran.biotools.fr")
-install.packages("plotly", repos="https://cran.biotools.fr")
-install.packages("remotes", repos="https://cran.biotools.fr")
+install.packages("caTools", repos="$cran_mirror")
+install.packages("argparse", repos="$cran_mirror")
+install.packages("plotly", repos="$cran_mirror")
+install.packages("remotes", repos="$cran_mirror")
 remotes::install_github("blmoore/rjsonpath")
 EOF
