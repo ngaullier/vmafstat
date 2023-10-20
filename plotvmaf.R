@@ -11,12 +11,14 @@ parser$add_argument( '-i', '--input',  action='append', help="json input file", 
 parser$add_argument( '-o', '--output',                  help="html output file", required=TRUE )
 parser$add_argument( '-t', '--title',  type="character",help="graph/html title", default=NULL )
 parser$add_argument( '-s', '--smooth', type="integer",  help="Number of frames to average for smoothing [default %(default)s]", default=10 )
+parser$add_argument( '-f', '--perframe', action="store_true", help="Enable frame-level plot", default=FALSE )
 
 args <- parser$parse_args()
 
 out_path=args$output
 page_title=args$title
 runmean_win=args$smooth
+perframe=args$perframe
 
 if (is.null(page_title) ) {
     page_title=out_path
@@ -54,8 +56,9 @@ for (in_path in args$input) {
          )
     }
     id <- basename(tools::file_path_sans_ext( in_path ))
-    fig <- fig %>% add_trace(y = vmaf_frame,  mode = 'lines', type='scatter', name = id, visible='legendonly')
-    fig <- fig %>% add_trace(y = vmaf_smooth, mode = 'lines', type='scatter', name = sprintf("%s\nvar=%.2f", id, vmaf_var_rms))
+    if (perframe)
+        fig <- fig %>% add_trace( y = vmaf_frame,  mode = 'lines', type='scatter', name = id, visible='legendonly' )
+    fig <- fig %>% add_trace(     y = vmaf_smooth, mode = 'lines', type='scatter', name = sprintf("%s\nvar=%.2f", id, vmaf_var_rms))
 }
 
 htmlwidgets::saveWidget( fig, out_path, title=page_title, selfcontained=FALSE )
