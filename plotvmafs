@@ -7,7 +7,10 @@ set -o nounset
 
 if [[ $# -lt 3 ]]
 then
-    echo "Usage: plotvmafs <json_folder> <plotvmaf_args>"  1>&2
+    echo "usage: plotvmafs JSON_FOLDER -o OUTPUT [OPT_PLOTVMAF_ARGS]" 1>&2
+    echo 1>&2
+    echo "Call plotmaf.R for each input json found in JSON_FOLDER."
+    echo "For optional arguments, see plotvmaf.R  --help"
     exit 1
 fi
 
