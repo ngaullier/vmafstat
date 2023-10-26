@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# "shellcheck" pass
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+_scriptdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# parse args
+if [[ $# -lt 3 ]]
+then
+    echo "Usage: $(basename "$0") REFERENCE_FOLDER MAIN_FOLDER OUTPUT_FOLDER [FFVMAF_OPT]" 1>&2
+    echo 1>&2
+    echo "Call ffvmaf for each file present in both REFERENCE_FOLDER and MAIN_FOLDER." 1>&2
+    echo "MAIN_FOLDER files are expected to be suffixed with the MAIN_FOLDER name." 1>&2
+    echo "ex: foo.mxf in /test/src corresponding to foo_mc_3500.mp4 in /test/mc_3500" 1>&2
+    echo "  $(basename "$0") /test/src/ /test/mc_3500/ /test/jsons/ -d 3" 1>&2
+    exit 1
+fi
+reference_path="$1"
+main_path="$2"
+output_path="$3"
+shift 3
+ffvmaf_opt=("$@")
+
+# derived vars
+main_id=$( basename "$main_path" )
+
+echo Processing "$main_id"...
+
+readarray -t filenames < <(medialist "$reference_path" ^ "$main_path?suffix=_$main_id" forcequick fullnames)
+for medialist_entry in "${filenames[@]}"
+do
+    IFS=$'\t' read -r -a files <<< "$medialist_entry"
+    unset IFS
+    echo "${files[0]} -> ${files[1]}"
+    json_id="${files[1]%.*}"
+    "$_scriptdir/ffvmaf" -r "$reference_path/${files[0]}" -i "$main_path/${files[1]}" -o "$output_path/${json_id}.json" "${ffvmaf_opt[@]}"
+done
