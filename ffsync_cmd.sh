@@ -70,7 +70,7 @@ get_opts()
     retry_start_shift_s=3
     max_offset_s=0.12
     seg_duration_s=1
-    min_psnr_diff=800
+    min_psnr_diff=400
     while [[ $# -gt 0 ]]
     do
         local key="$1"
