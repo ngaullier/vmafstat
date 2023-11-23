@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+if [[ $# -lt 1 ]]
+then
+    echo "usage: fflog2cputabs FFMPEG_STDOUT" 1>&2
+    echo 1>&2
+    echo "Grep -benchmark output in ffmpeg stdout logs, get usertime and realtime in two tab-delimited columns." 1>&2
+    echo "Output next to the inputfile, with suffix '_cpu.txt'." 1>&2
+    exit 1
+fi
+
+grep "bench: utime" "$1"|awk -v "FS=\=| |s" '{print $3 "\t" $10}' >"$1_cpu.txt"
