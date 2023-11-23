@@ -9,11 +9,26 @@ if [[ $# -lt 3 ]]
 then
     echo "usage: plotvmafs JSON_FOLDER -o OUTPUT [OPT_PLOTVMAF_ARGS]" 1>&2
     echo 1>&2
-    echo "Call plotmaf.R for each input json found in JSON_FOLDER."
-    echo "For optional arguments, see plotvmaf.R  --help"
+    echo "Call plotmaf.R for each input json found in JSON_FOLDER." 1>&2
+    echo "If JSON_FOLDER contains *, it is interpreted as a glob." 1>&2
+    echo "For optional arguments, see plotvmaf.R  --help" 1>&2
+    echo "Note that -d is required if the input json lengths differ." 1>&2
+    echo 1>&2
+    echo "Example: " 1>&2
+    echo "  $(basename "$0") /test/json  -o /test/all.html" 1>&2
+    echo "  $(basename "$0") '/test/json/XDCAM*' -o /test/xdcam_30s.html -d 30" 1>&2
     exit 1
 fi
 
-readarray -d '' inputs < <(find "$1" -maxdepth 1 -name "*.json" -printf "-i\0%p\0")
+json_folder="$1"
+json_filter="*"
+# shellcheck disable=SC2049,SC2076
+if [[ "$( basename "$json_folder" )" =~ "*" ]]
+then
+    json_filter="$( basename "$json_folder" )"
+    json_folder="$( dirname "$json_folder" )"
+fi
+
+readarray -d '' inputs < <(find "${json_folder}" -maxdepth 1 -type f -name "${json_filter}.json" -printf "-i\0%p\0")
 shift
 ./plotvmaf.R "${inputs[@]}" "$@"
