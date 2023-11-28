@@ -107,7 +107,7 @@ done
 # ____________________________________
 log 0 "Synced: offset=$(jq -n "${shift_main_best}-${shift_ref_best}/(${fps_ref})*(${fps_main})|round"), psnr_diff=$(jq -n "$psnr_diff_best"'/100'), psnr_max=$(jq -n "$psnr_best"'/100')"
 
-echo "$shift_ref_best"
 echo "$shift_main_best"
+echo "$shift_ref_best"
 echo "$psnr_diff_best"
 echo "$psnr_best"
