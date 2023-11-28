@@ -65,10 +65,10 @@ get_opts()
     verbose=1
     file_ref=
     file_main=
-    start_ref_base_s=0.12
+    start_ref_base_s=0.24
     start_main_base_s=auto
     retry_start_shift_s=3
-    max_offset_s=0.12
+    max_offset_s=0.24
     seg_duration_s=1
     min_psnr_diff=400
     while [[ $# -gt 0 ]]
