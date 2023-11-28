@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# "shellcheck -ax" pass
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+_scriptdir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# pushd required for shellcheck workaround
+pushd "$_scriptdir" >/dev/null
+. ./ffsyncplay_cmd.sh
+popd >/dev/null
+
+# parse args
+get_opts "$@"
+if [[ -z $file_ref || -z $file_main ]]; then
+    usage
+fi
+
+if [[ -z $ffsync_opt ]]; then
+    ffsync_opt_flat=
+else
+    IFS=':' read -r -a ffsync_opt_pairs <<< "$ffsync_opt"
+    unset IFS
+    ffsync_opt_flat=$(for optpair in "${ffsync_opt_pairs[@]}"; do \
+        [[ "$optpair" == *=* ]] && echo "--${optpair%=*} ${optpair#*=}" || echo "--$optpair"; \
+        done;)
+fi
+
+# global settings
+INI__ffplay_binary='ffplay'
+INI__ff_global=( '-hide_banner' '-probesize' '10000000' )
+
+# check deps
+! which "$INI__ffplay_binary" >/dev/null && echo "ffplay: '$INI__ffplay_binary' not found" && exit 1
+
+# ffsync
+# shellcheck disable=SC2206
+cmd_sync=("$_scriptdir/ffsync" '-i' "${file_main}" '-r' "${file_ref}" $ffsync_opt_flat)
+echo "  $(printf "%q " "${cmd_sync[@]}")"
+# catch cmd_sync exit code before parsing
+cmd_sync_output=$( "${cmd_sync[@]}" )
+readarray -t sync_info <<< "$cmd_sync_output"
+start_main=${sync_info[0]}
+start_ref=${sync_info[1]}
+
+# vmaf
+# shellcheck disable=SC2206
+cmd_play=("$INI__ffplay_binary" "${INI__ff_global[@]}" '-f' 'lavfi' \
+    "movie='${file_main}'[imain],[imain]trim=start_frame=${start_main},settb=AVTB,setpts=PTS-STARTPTS,crop=960:x=480[main];
+     movie='${file_ref}'[iref],[iref]trim=start_frame=${start_ref},settb=AVTB,setpts=PTS-STARTPTS,crop=960:x=480[ref];
+     [main][ref]hstack[out0]"
+)
+echo "  $(printf "%q " "${cmd_play[@]}")"
+"${cmd_play[@]}"

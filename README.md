@@ -13,6 +13,24 @@ This is a collection of several tools for benchmarking video codecs.
 
 These cli tools are the only commands required for a typical benchmark.
 
+## ffsyncplay
+Check the detected sync with ffplay and side by side display.
+```
+Usage: ffsyncplay [-h] -r reference_input -i main_input
+      [-ffsync_opt opt1=val1:opt2=val2..]
+
+Synch files with ffsync, and ffplay them side by side.
+
+Options:
+  -h              display this help text.
+  -r --ref        reference input file.
+  -i --main       processed input file.
+  --ffsync_opt    pairs of long_name=value, semicolon-delimited.
+
+Example:
+./ffsyncplay -i encoded.mp4 -r source.mxf --ffsync_opt "start_ref=6:max_offset=0.08:duration=0.2"
+```
+
 ## ffvmafs
 Batch **vmaf computing** on all files of a media folder.
 ```
