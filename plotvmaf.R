@@ -63,7 +63,7 @@ for (in_path in args$input) {
     }
     id <- basename(tools::file_path_sans_ext( in_path ))
     if (perframe)
-        fig <- fig %>% add_trace( y = vmaf_frame,  mode = 'lines', type='scatter', name = id, visible='legendonly' )
+        fig <- fig %>% add_trace( y = vmaf_frame,  mode = 'lines+markers', type='scatter', name = id, visible='legendonly' )
     fig <- fig %>% add_trace(     y = vmaf_smooth, mode = 'lines', type='scatter', name = sprintf("%s\nvar=%.2f", id, vmaf_var_rms))
 }
 
