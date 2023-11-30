@@ -21,6 +21,9 @@ duration=args$duration
 page_title=args$title
 runmean_win=args$smooth
 perframe=args$perframe
+smooth_visible='TRUE'
+if (perframe)
+    smooth_visible='legendonly'
 
 if (is.null(page_title) ) {
     page_title=out_path
@@ -63,8 +66,8 @@ for (in_path in args$input) {
     }
     id <- basename(tools::file_path_sans_ext( in_path ))
     if (perframe)
-        fig <- fig %>% add_trace( y = vmaf_frame,  mode = 'lines+markers', type='scatter', name = id, visible='legendonly' )
-    fig <- fig %>% add_trace(     y = vmaf_smooth, mode = 'lines', type='scatter', name = sprintf("%s\nvar=%.2f", id, vmaf_var_rms))
+        fig <- fig %>% add_trace( y = vmaf_frame,  mode = 'lines+markers', type='scatter', name = id )
+    fig <- fig %>% add_trace(     y = vmaf_smooth, mode = 'lines', type='scatter', name = sprintf("%s\nvar=%.2f", id, vmaf_var_rms), visible=smooth_visible )
 }
 
 htmlwidgets::saveWidget( fig, out_path, title=page_title, selfcontained=FALSE )
