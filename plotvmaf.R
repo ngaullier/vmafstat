@@ -39,7 +39,10 @@ for (in_path in args$input) {
     vmaf_frame = suppressMessages( json_path(json, "$.frames[*].metrics.vmaf") )
     if (duration > 0)
         vmaf_frame <- vmaf_frame[1:duration]
-    vmaf_smooth = runmean(vmaf_frame, runmean_win)
+    # it is required to handle 1/(1/0)=0 as VMAF score 0 may happen in some cases (ex: desync)
+    # alg='R' should have worked but it is buggy, so just replace zeroes...
+    vmaf_frame[ vmaf_frame==0 ] <- 0.01
+    vmaf_smooth = 1/runmean(1/vmaf_frame, runmean_win)
     vmaf_var_rms = sqrt(mean( (vmaf_frame-vmaf_smooth)^2 ))
 
     # Plot init
