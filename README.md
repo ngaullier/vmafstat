@@ -42,6 +42,20 @@ ex: foo.mxf in /test/src corresponding to foo_mc_3500.mp4 in /test/mc_3500
   ffvmafs /test/src/ /test/mc_3500/ /test/jsons/ -d 3
 ```
 
+## vmafstats
+**Print** vmaf values from one or more jsons.
+```
+usage: vmafstats JSON_FILE|JSON_FOLDER
+
+Print vmaf min/max/mean/harmonic_mean from a JSON_FILE or all json in JSON_FOLDER.
+If JSON_FOLDER contains *, it is interpreted as a glob.
+
+Example:
+  vmafstats /test/json
+  vmafstats '/test/json/XDCAM*'
+  vmafstats '/test/json/XDCAM_mc_15.json'
+```
+
 ## plotvmafs
 **Plots** a folder or a glob-selection of jsons into a web page.
 ```

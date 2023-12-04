@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# "shellcheck" pass
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+if [[ $# -lt 1 ]]
+then
+    echo "usage: $(basename "$0") JSON_FILE|JSON_FOLDER" 1>&2
+    echo 1>&2
+    echo "Print vmaf min/max/mean/harmonic_mean from a JSON_FILE or all json in JSON_FOLDER." 1>&2
+    echo "If JSON_FOLDER contains *, it is interpreted as a glob." 1>&2
+    echo 1>&2
+    echo "Example: " 1>&2
+    echo "  $(basename "$0") /test/json" 1>&2
+    echo "  $(basename "$0") '/test/json/XDCAM*'" 1>&2
+    echo "  $(basename "$0") '/test/json/XDCAM_mc_15.json'" 1>&2
+    exit 1
+fi
+
+json_folder="$1"
+json_filter="*"
+# shellcheck disable=SC2049,SC2076
+if [[ "$( basename "$json_folder" )" =~ "*" ]]
+then
+    json_filter="$( basename "$json_folder" )"
+    json_folder="$( dirname "$json_folder" )"
+fi
+
+readarray -d '' inputs < <(find "${json_folder}" -maxdepth 1 -type f -name "${json_filter}.json" -print0)
+for input in "${inputs[@]}"
+do
+    json_name=$(basename "$input")
+    json_id="${json_name%.*}"
+    jq -r '.pooled_metrics.vmaf | "'"$json_id"' " + (.min*100|round/100|tostring) + " " + (.max*100|round/100|tostring) + " " + (.mean*100|round/100|tostring) + " " + (.harmonic_mean*100|round/100|tostring)' "$input"
+done
