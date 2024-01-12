@@ -76,12 +76,12 @@ graph.addEventListener("keydown", function(e) {
         case 'Ctrl+ArrowDown': zoomY(-fac); break
         case '+': zoomX(fac); zoomY(fac); break
         case '-': zoomX(-fac); zoomY(-fac); break
-        case 'X': case 'U':
+        //case 'X': case 'U':
              update['xaxis.range'] = [extremes.x.min[0].val, extremes.x.max[0].val]
              if (key=='X') break
-        case 'Y': case 'U':
+        case 'Y': //case 'U':
              update['yaxis.range'] = [extremes.y.min[0].val, extremes.y.max[0].val]; break
-        case 'x':
+        //case 'x':
              let xrange = graph._fullData.map(d => current_extreme(d.x,d.y,...graph._fullLayout.yaxis.range)).reduce((e1,e2) => [Math.min(e1[0],e2[0]), Math.max(e1[1],
  e2[1])])
              update['xaxis.range'] = xrange; break
@@ -101,7 +101,7 @@ graph.addEventListener("keydown", function(e) {
         case 'End': panX(1.); break
         case 'PageUp': panY(1.); break
         case 'PageDown': panY(-1.); break
-        case 'l': case 'L':
+        case 'l': //case 'L':
               // toggle linear and log scale
               axis = graph.layout[key=='L' ? 'xaxis' : 'yaxis'];   // keep format
               [func, axis.type] = (axis.type == 'linear') ? [Math.log10, 'log'] : [(x => 10**x), 'linear']
