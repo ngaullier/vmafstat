@@ -12,7 +12,7 @@ parser$add_argument( '-i', '--input',  action='append', help="json input file", 
 parser$add_argument( '-o', '--output',                  help="html output file", required=TRUE )
 parser$add_argument( '-d', '--duration', type="integer",help="Number of frames to process [default all]. Also a turnaround when sizes differ [use any value]", default=0 )
 parser$add_argument( '-t', '--title',  type="character",help="graph/html title", default=NULL )
-parser$add_argument( '-s', '--smooth', type="integer",  help="Number of frames to average for smoothing [default %(default)s]", default=10 )
+parser$add_argument( '-s', '--smooth', type="integer",  help="Number of frames to average for smoothing [default %(default)s]", default=50 )
 parser$add_argument( '-f', '--perframe', action="store_true", help="Enable frame-level plot", default=FALSE )
 parser$add_argument( '-F', '--perframeonly', action="store_true", help="Enable only frame-level plot", default=FALSE )
 
