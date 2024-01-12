@@ -8,5 +8,6 @@ install.packages("caTools", repos="$cran_mirror")
 install.packages("argparse", repos="$cran_mirror")
 install.packages("plotly", repos="$cran_mirror")
 install.packages("remotes", repos="$cran_mirror")
+install.packages("this.path", repos="$cran_mirror")
 remotes::install_github("blmoore/rjsonpath")
 EOF
