@@ -1,5 +1,5 @@
 # libssl required by plotly
-sudo apt-get install r-base libssl-dev
+sudo apt-get install r-base libssl-dev libcurl4-gnutls-dev
 
 # install R packages
 cran_mirror="https://cran.biotools.fr"
