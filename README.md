@@ -8,13 +8,14 @@ This is a collection of several tools for benchmarking video codecs.
 * for vmaf analysis and ploting: use [R_install](R_install)
 * basic dependencies: ffprobe, jq
 
-
 # Main tools
 
 These cli tools are the only commands required for a typical benchmark.
 
 ## ffsyncplay
+
 Check the detected sync with ffplay and side by side display.
+
 ```
 Usage: ffsyncplay [-h] -r reference_input -i main_input
       [-ffsync_opt opt1=val1:opt2=val2..]
@@ -32,7 +33,9 @@ Example:
 ```
 
 ## ffvmafs
+
 Batch **vmaf computing** on all files of a media folder.
+
 ```
 Usage: ffvmafs REFERENCE_FOLDER MAIN_FOLDER OUTPUT_FOLDER [FFVMAF_OPT]
 
@@ -43,7 +46,9 @@ ex: foo.mxf in /test/src corresponding to foo_mc_3500.mp4 in /test/mc_3500
 ```
 
 ## vmafstats
+
 **Print** vmaf values from one or more jsons.
+
 ```
 usage: vmafstats JSON_FILE|JSON_FOLDER
 
@@ -57,7 +62,9 @@ Example:
 ```
 
 ## plotvmafs
+
 **Plots** a folder or a glob-selection of jsons into a web page.
+
 ```
 usage: plotvmafs JSON_FOLDER -o OUTPUT [OPT_PLOTVMAF_ARGS]
 
@@ -72,7 +79,9 @@ Example:
 ```
 
 ## fflog2cputabs
+
 Extract **cpu consumption stats** from an `ffmpeg -benchmark` stdout log.
+
 ```
 usage: fflog2cputabs FFMPEG_STDOUT
 
@@ -88,7 +97,9 @@ These tools are used internally by the main tools, but they could be used direct
 For example: ffvmafs calls ffvmaf which calls ffsync.
 
 ## ffvmaf
+
 Compute vmaf of a single processed file.
+
 ```
 Usage: ffvmaf [-h] [-v] [-q] [-V] -r reference_input -i main_input -o output_json
       [-d duration] [-ffsync_opt opt1=val1:opt2=val2..]
@@ -111,7 +122,9 @@ Example:
 ```
 
 ## ffsync
+
 Get the start times of two videos to read them in sync.
+
 ```
 Usage: ffsync [-h] [-v] [-q] [-V] -r reference_input -i main_input
       [-s start_time] [--start_main start_time_main] [-o max_time_offset] [-d segment_duration]
@@ -156,7 +169,9 @@ Example:
 ```
 
 ## plotvmaf.R
+
 Plots some jsons into a web page.
+
 ```
 usage: ./plotvmaf.R [-h] -i INPUT -o OUTPUT [-d DURATION] [-t TITLE]
                     [-s SMOOTH] [-f]
