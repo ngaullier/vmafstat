@@ -4,9 +4,8 @@ This is a collection of several tools for benchmarking video codecs.
 
 # Dependencies
 
-* for vmaf computing: [ffmpeg](http://dml.common.qa.tvvideoms.com/CodecBench/ffmpeg) supporting [libvmaf](https://debian.pkgs.org/11/multimedia-main-amd64/libvmaf1_2.2.0-dmo1+deb11u1_amd64.deb.html)
-* for vmaf analysis and ploting: use [R_install](R_install)
-* basic dependencies: ffprobe, jq
+* requires `ffmpeg` with `libvmaf` support
+* use [install](install) script to install dependencies for `plotly` and create symlink in /srv/
 
 # Main tools
 

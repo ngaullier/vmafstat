@@ -4,6 +4,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
+script_dir=$(dirname "${BASH_SOURCE[0]}")
 
 if [[ $# -lt 3 ]]
 then
@@ -34,4 +35,5 @@ if [[ ${#inputs[@]} = 0 ]]; then
     exit 1
 fi
 shift
-./plotvmaf.R "${inputs[@]}" "$@"
+set -x
+"$script_dir"/plotvmaf.R "${inputs[@]}" "$@"

@@ -1,9 +1,14 @@
+#! /usr/bin/env bash
+
+set -o errexit
+
 # libssl required by plotly
 sudo apt-get install r-base libssl-dev libcurl4-gnutls-dev
 
 # install R packages
-cran_mirror="https://cran.biotools.fr"
-sudo R --vanilla <<EOF
+if [[ ! -d /usr/local/lib/R/site-library/rjsonpath ]]; then
+    cran_mirror="https://cran.asnr.fr"
+    sudo R --vanilla <<EOF
 install.packages("caTools", repos="$cran_mirror")
 install.packages("argparse", repos="$cran_mirror")
 install.packages("plotly", repos="$cran_mirror")
@@ -11,3 +16,6 @@ install.packages("remotes", repos="$cran_mirror")
 install.packages("this.path", repos="$cran_mirror")
 remotes::install_github("blmoore/rjsonpath")
 EOF
+fi
+
+[[ -d /srv/vmafstat ]] || sudo ln -s "$(pwd)"/vmafstat /srv/
