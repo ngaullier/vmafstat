@@ -84,4 +84,4 @@ add_js_path = dirname(this.path())
 add_js_name = "zoom_pan.js"
 out_dir = dirname(out_path)
 system(sprintf( "[ -f '%s/%s' ] || cp '%s/%s' '%s'", out_dir, add_js_name, add_js_path, add_js_name, out_dir ))
-system(sprintf( "sed -i '/^<\\/body/ s/^/  <script src=\"%s\"><\\/script><script>zoompan(\".plotly\")<\\/script>/' %s", add_js_name, out_path ))
+system(sprintf( "sed -i '/^<\\/body/ s/^/  <script src=\"%s\"><\\/script><script>zoompan(\".plotly\")<\\/script>/' '%s'", add_js_name, out_path ))
