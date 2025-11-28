@@ -75,6 +75,7 @@ while true; do
                  '-f' 'null' '-')
             log 2 "  $(printf "%q " "${cmd_analysis[@]}")"
             psnr=$("${cmd_analysis[@]}" 2>&1|grep psnr|awk -v 'RS=:' '/average/{getline; print $1}')
+            [[ $psnr == "inf" ]] && psnr=999999
             log 1 "$((shift_main-start_main_base)): $psnr"
             psnr_int=$(jq -n '100*'"$psnr"'|floor')
             if [[ ${psnr_int} -gt ${this_psnr_best} ]]
